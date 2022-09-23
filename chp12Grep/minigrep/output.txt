@@ -1,0 +1,4 @@
+["target/debug/minigrep", "to", "poem.tx"]
+case false
+Searching for query to
+Searching in file poem.tx
