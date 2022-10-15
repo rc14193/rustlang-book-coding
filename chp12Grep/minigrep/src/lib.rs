@@ -26,12 +26,15 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>>{
 }
 
 impl Config {
-    pub fn new(args: &[String]) -> Result<Config, &'static str> {
-        if args.len() < 3 {
-            return Err("Not enough arguments.");
-        }
-        let query = args[1].clone();
-        let filename = args[2].clone();
+    pub fn new(mut args: env::Args) -> Result<Config, &'static str> {
+        let query = match args.next() {
+            Some(arg) => arg,
+            None => return Err("Didn't get a query string"),
+        };
+        let filename = match args.next() {
+            Some(arg) => arg,
+            None => return Err("Didn't get a file path"),
+        };
         // challenge portion cli precedence, fall back env
         let case_sensitive: bool = if args.contains(&String::from("sensitive")) {
             true

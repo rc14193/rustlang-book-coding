@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":[["generate_workout",""],["main",""],["simulated_expensive_calculation",""]],"struct":[["Cacher",""],["Counter",""]]};

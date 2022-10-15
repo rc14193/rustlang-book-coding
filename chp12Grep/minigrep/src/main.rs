@@ -8,7 +8,7 @@ fn main(){
     let cli_args = env::args().collect::<Vec<String>>();
     println!("{:?}", cli_args);
 
-    let config = Config::new(&cli_args).unwrap_or_else(|err| {
+    let config = Config::new(env::args()).unwrap_or_else(|err| {
         eprintln!("Problem processing args of error {}", err);
         process::exit(1)
     });
