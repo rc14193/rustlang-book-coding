@@ -1,4 +1,4 @@
-use std::{ops::Deref, cell::RefCell};
+use std::{ops::Deref, cell::RefCell, rc::{Rc, Weak}};
 
 pub trait Messenger {
     fn send(&self, msg: &str);
@@ -39,6 +39,13 @@ where
     }
 }
 
+#[derive(Debug)]
+struct Node {
+    parent: RefCell<Weak<Node>>,
+    value: i32,
+    children: RefCell<Vec<Rc<Node>>>
+}
+
 struct MyBox<T>(T);
 
 impl<T> MyBox<T> {
@@ -70,8 +77,24 @@ enum List {
     Cons(Rc<RefCell<i32>>, Rc<List>),
     Nil
 }
+// For memory leak chapter since different list flavor, alter name to avoid conflicts
+#[derive(Debug)]
+enum Listt {
+    Conss(i32, RefCell<Rc<Listt>>),
+    Nill
+}
 use crate::List::{Cons, Nil};
-use std::rc::Rc;
+use crate::Listt::{Conss, Nill};
+
+impl Listt {
+    fn tail(&self) -> Option<&RefCell<Rc<Listt>>> {
+        match self {
+            Conss(_, item) => Some(item),
+            Nill => None,
+        }
+    }
+}
+
 
 fn hello(x: &str){
     println!("hello {}", x);
@@ -89,10 +112,57 @@ fn main() {
     //let x = 5;
     //let y = &mut x;
 
-    let _a = Rc::new(Cons(Rc::new(RefCell::new(5)), Rc::new(Cons(Rc::new(RefCell::new(10)), Rc::new(Nil)))));
-    let _b = Cons(Rc::new(RefCell::new(3)), Rc::clone(&_a));
-    let _c = Cons(Rc::new(RefCell::new(4)), Rc::clone(&_a));
+    let leaf = Rc::new(Node {
+        parent: RefCell::new(Weak::new()),
+        value: 3,
+        children: RefCell::new(vec![]),
+    });
 
+    println!("leaf parent = {:?}", leaf.parent.borrow().upgrade());
+
+    let branch = Rc::new(Node {
+        parent: RefCell::new(Weak::new()),
+        value: 5,
+        children: RefCell::new(vec![Rc::clone(&leaf)]),
+    });
+
+    *leaf.parent.borrow_mut() = Rc::downgrade(&branch);
+
+    println!("leaf parent = {:?}", leaf.parent.borrow().upgrade());
+
+    let a = Rc::new(Conss(5, RefCell::new(Rc::new(Nill))));
+
+    println!("a initial rc count = {}", Rc::strong_count(&a));
+    println!("a next item = {:?}", a.tail());
+
+    let b = Rc::new(Conss(10, RefCell::new(Rc::clone(&a))));
+
+    println!("a rc count after b creation = {}", Rc::strong_count(&a));
+    println!("b initial rc count = {}", Rc::strong_count(&b));
+    println!("b next item = {:?}", b.tail());
+
+    if let Some(link) = a.tail() {
+        *link.borrow_mut() = Rc::clone(&b);
+    }
+
+    println!("b rc count after changing a = {}", Rc::strong_count(&b));
+    println!("a rc count after changing a = {}", Rc::strong_count(&a));
+
+    // Uncomment the next line to see that we have a cycle;
+    // it will overflow the stack
+    // println!("a next item = {:?}", a.tail());
+
+    println!("Running not the same a and b in the memory leak section");
+    let value = Rc::new(RefCell::new(5));
+    let a = Rc::new(Cons(Rc::clone(&value), Rc::new(Cons(Rc::new(RefCell::new(10)), Rc::new(Nil)))));
+    let b = Cons(Rc::new(RefCell::new(3)), Rc::clone(&a));
+    let c = Cons(Rc::new(RefCell::new(4)), Rc::clone(&a));
+
+    *value.borrow_mut() += 10;
+
+    println!("a after = {:?}", a);
+    println!("b after = {:?}", b);
+    println!("c after = {:?}", c);
     let m = MyBox::new(String::from("Rust"));
     hello(&m);
 
