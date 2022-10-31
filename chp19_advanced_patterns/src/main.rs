@@ -1,6 +1,7 @@
 use std::slice;
 use std::ops::Add;
 use std::fmt;
+use hello_macro::HelloMacro;
 
 static HELLO_WORLD: &str = "Hello, world!";
 static mut COUNTER: u32 = 0;
@@ -78,7 +79,13 @@ impl fmt::Display for Point {
         write!(f, "({}, {})", self.x, self.y)
     }
 }
+struct Pancakes;
 
+impl HelloMacro for Pancakes {
+    fn hello_macro() {
+        println!("Hello, Macro! My name is Pancakes!");
+    }
+}
 struct Wrapper(Vec<String>);
 
 impl fmt::Display for Wrapper {
@@ -143,6 +150,9 @@ fn main() {
     // Advanced Types
 
     // Advanced Functions and Closures
+
+    // Macros
+    Pancakes::hello_macro();
 }
 
 fn add_one(x: i32) -> i32 {
@@ -180,3 +190,19 @@ fn add_to_count(inc: u32) {
         COUNTER += inc;
     }
 }
+
+// Macros
+
+#[macro_export] // makes macro available
+macro_rules! vec {
+    ( $( $x:expr ),* ) => {
+        {
+            let mut temp_vec = Vec::new();
+            $(
+                temp_vec.push($x);
+            )*
+            temp_vec
+        }
+    };
+}
+
